@@ -30,6 +30,8 @@ extra_bullet = None
 scoreboard = None
 flag = True
 job = None
+table_b = None
+
 
 
 class Bullet:
@@ -261,7 +263,7 @@ def game():
         update_picture(calboy2, "cowboy_photos/dead2.png")
         pilImage3 = Image.open("cowboy_photos/blue1.jpg")
         image3 = ImageTk.PhotoImage(pilImage3)
-        canvas.create_image(500, 200, image=image3)
+        table_b = canvas.create_image(500, 200, image=image3)
         kill()
         #calboy1.lives = calboy2.lives = 5
 
@@ -270,7 +272,7 @@ def game():
         calboy2.num_of_bullets = calboy1.num_of_bullets = -1
         pilImage3 = Image.open("cowboy_photos/red1.jpg")
         image3 = ImageTk.PhotoImage(pilImage3)
-        canvas.create_image(500, 200, image=image3)
+        table_r = canvas.create_image(500, 200, image=image3)
         update_picture(calboy1, "cowboy_photos/dead1.png")
         kill()
         #calboy1.lives = calboy2.lives = 5
@@ -282,6 +284,7 @@ def kill():
     barrel = None
     flint = None
     cactus_list.clear()
+    image3 = None
 
 
 def anim():
@@ -333,6 +336,8 @@ class Scoreboard:
 
 def generation():
     global num_of_cactuses, flint, barrel
+    #if flag == False:
+
     if cactus_list == [] and flint is None and barrel is None:
         flint_generation()
         barrel_generation()
@@ -374,3 +379,4 @@ def main():
 
 #main()
 #root.mainloop()
+
