@@ -151,7 +151,7 @@ class Bullet:
                 self.pilIm = self.Im = None
                 canvas.delete(self.id)
             else:
-                root.after(15, self.move)
+                root.after(20, self.move)
         else:
             self.x = self.y = self.vx = self.vy = 0
             self.pilIm = self.Im = self.id = None
@@ -165,7 +165,7 @@ class Cowboy:
         self.y = y
         self.v = v
         self.r = 32
-        self.t = 20
+        self.t = 30
         self.fire_flag = False
         self.bullet = None
         self.str = str
@@ -178,10 +178,10 @@ class Cowboy:
         bullet = None
         if self.num_of_bullets == 1:
             if self.x < 250:
-                bullet = Bullet(self.x + 23, self.y, 14, 0, "cowboy_photos/пуля2.png")
+                bullet = Bullet(self.x + 23, self.y, 32, 0, "cowboy_photos/пуля2.png")
                 self.str = 'cowboy_photos/калбой1.png'
             if self.x > 250:
-                bullet = Bullet(self.x - 23, self.y, -14, 0, "cowboy_photos/пуля1.png")
+                bullet = Bullet(self.x - 23, self.y, -32, 0, "cowboy_photos/пуля1.png")
                 self.str = 'cowboy_photos/калбой2.png'
 
             self.t = 200
@@ -261,7 +261,7 @@ def game():
         update_picture(calboy2, "cowboy_photos/dead2.png")
         pilImage3 = Image.open("cowboy_photos/blue1.jpg")
         image3 = ImageTk.PhotoImage(pilImage3)
-        canvas.create_image(350, 200, image=image3)
+        canvas.create_image(500, 200, image=image3)
         kill()
         #calboy1.lives = calboy2.lives = 5
 
@@ -270,7 +270,7 @@ def game():
         calboy2.num_of_bullets = calboy1.num_of_bullets = -1
         pilImage3 = Image.open("cowboy_photos/red1.jpg")
         image3 = ImageTk.PhotoImage(pilImage3)
-        canvas.create_image(350, 200, image=image3)
+        canvas.create_image(500, 200, image=image3)
         update_picture(calboy1, "cowboy_photos/dead1.png")
         kill()
         #calboy1.lives = calboy2.lives = 5
@@ -337,13 +337,14 @@ def generation():
         flint_generation()
         barrel_generation()
         cactuses_generation()
-        for i in range(num_of_cactuses):
-            if cactus_list[i].id is None:
-                update_picture(cactus_list[i], "cowboy_photos/кактус.png")
-        if flint is not None and flint.id is None:
-            update_picture(flint, "cowboy_photos/кремень.png")
-        if barrel is not None and barrel.id is None:
-            update_picture(barrel, "cowboy_photos/бочка.png")
+#        for i in range(num_of_cactuses):
+#            if cactus_list[i].id is None:
+#                update_picture(cactus_list[i], "cowboy_photos/кактус.png")
+#                print("i am debiliod")
+#        if flint is not None and flint.id is None:
+#            update_picture(flint, "cowboy_photos/кремень.png")
+#        if barrel is not None and barrel.id is None:
+#            update_picture(barrel, "cowboy_photos/бочка.png")
     if flint is None:
         if randint(0, 50) > 25:
             flint_generation()
@@ -357,10 +358,10 @@ def main():
     global calboy1, calboy2, pilImage1, image1, pilImage2, image2, scoreboard, flag, num_of_cactuses
     flag = True
     scene()
-    calboy1 = Cowboy(100, 260, 6, "cowboy_photos/кулбой1.png")
+    calboy1 = Cowboy(100, 260, 9, "cowboy_photos/кулбой1.png")
     pilImage1 = calboy1.pilIm
     image1 = calboy1.Im
-    calboy2 = Cowboy(900, 260, -6, "cowboy_photos/кулбой2.png")
+    calboy2 = Cowboy(900, 260, -9, "cowboy_photos/кулбой2.png")
     pilImage2 = calboy2.pilIm
     image2 = calboy2.Im
     scoreboard = Scoreboard()
