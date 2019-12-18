@@ -1,3 +1,4 @@
+
 from tkinter import *
 from PIL import ImageTk, Image
 from random import randrange as rnd, choice
@@ -77,13 +78,14 @@ def first_game():
 
 def second_game():
     Cowboy.kill()
-    canvas.delete(ALL)
     forgotten()
     #start_button.destroy()
     i = 0
+    canvas.delete(ALL)
+
     Cowboy.main()
     button1.place(x=110, y=8)
-
+    
 
 def third_game():
     canvas.delete(ALL)
@@ -92,7 +94,6 @@ def third_game():
     i = 0
     samuray.Game()
     button1.place(x=110, y=8)
-
 
 def ads():
     canvas.delete(ALL)
@@ -142,8 +143,10 @@ def menu():
     updateTime = 0
     v_init.kostyl()
     
-    
+    Cowboy.calboy1 = Cowboy.calboy2 = Cowboy.table_r = Cowboy.table_b = None
+    #Cowboy.kill()
     canvas.delete(ALL)
+    
     
     inn = canvas.create_image(200, 300, image = thingas)
     imagesprite = canvas.create_image(502,300,image=im)
