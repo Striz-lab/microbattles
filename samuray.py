@@ -12,12 +12,19 @@ canvas.pack()
 window_x = 1000
 window_y = 750
 P_length = int(window_x/4)
+fps = 10
 P_height = int(0.04*window_y)
+R_length = 73
+g = 0.3
+PlayerV = 50/fps
 SamuraiSize = 80
 SamuraiPicture = None
 Background = Image.open("samurai_pics/background.jpg")
 Cloud = Image.open("samurai_pics/Cloud.png")
 Platform = Image.open("samurai_pics/platform.png")
+Rope = Image.open("samurai_pics/Rope.png")
+objects = [Image.open("samurai_pics/fruit1.png"), Image.open("samurai_pics/fruit2.png"), Image.open("samurai_pics/fruit3.png")]
+t = 0
 
 class Obsticles:
     def __init__(self, x = 0, y = 0, ObstPic = None):
@@ -29,6 +36,64 @@ class Obsticles:
     def Generate(self):
         self.pic = ImageTk.PhotoImage(self.pic)
         self.id = canvas.create_image(self.x, self.y, image=self.pic)
+
+class Objects:
+    def __init__(self, Rope):
+        self.len = R_length
+        self.x = randint(100,900)
+        self.y = -(R_length/2 +10)
+        self.tlive = 500
+        self.tmove = 0
+        self.vy = self.len/(2*100)
+        self.rope = Rope.resize((10, R_length))
+        self.pilrope = 0
+        self.status = 1
+        self.ropeId = 0
+        self.fruit = objects[randint(0, 2)].resize((60,60))
+        self.pilfruit = 0
+        self.fruitId = 0
+    def CreateItem(self):
+        self.pilrope = ImageTk.PhotoImage(self.rope)
+        self.pilfruit = ImageTk.PhotoImage(self.fruit)
+        self.ropeId = canvas.create_image(self.x, self.y - R_length/2, image=self.pilrope)
+        self.fruitId = canvas.create_image(self.x, self.y, image=self.pilfruit)
+
+    def set_coords(self):
+        if not self.fruitId == None:
+            canvas.coords(self.fruitId, self.x, self.y)
+        if not self.ropeId == None:
+            canvas.coords(self.ropeId, self.x, self.y - R_length/2)
+
+
+    def Act(self):
+        global t
+        self.CreateItem()
+        if self.y < R_length and self.status == 1:
+            self.vy += 0.01
+            self.y += self.vy
+            self.set_coords()
+
+        if self.status != 0 and self.tlive != 0:
+            self.tlive -= 1
+        if self.status != 0 and self.tlive == 0:
+            self.vy = -t * g
+            self.y += self.vy
+            self.set_coords()
+            t += 1
+        if self.status == 0:
+            canvas.delete(self.fruitId)
+            self.fruitId = None
+            self.vy = -t * 0.03
+            self.y += self.vy
+            self.set_coords()
+            t += 1
+        if self.vy < 0 and self.y < -30:
+            t = 0
+            self.__del__()
+
+    def __del__(self):
+        canvas.delete(self.ropeId)
+        canvas.delete(self.fruitId)
 
 platforms = [0] * 4
 shift_x1 = randint(int(window_x / 6), int(1 * window_x / 3))
@@ -75,9 +140,9 @@ class Samurai:
         self.figure = SamuraiPic.resize((SamuraiSize, SamuraiSize))
         self.pilFigure = ImageTk.PhotoImage(self.figure)
         self.id = canvas.create_image(self.x, self.y, image=self.pilFigure)
-        self.BorderCondition = 0
         self.JumpCondition = 0
         self.PlatformCondition = [0] * 4
+        self.score = 0
     def set_coords(self):
         canvas.coords(self.id, self.x, self.y)
 
@@ -96,46 +161,43 @@ class Samurai:
             self.TurnAround()
             player2.TurnAround()
 
-        if (self.y + SamuraiSize/2 >= player2.y - SamuraiSize/2 and self.vy > 0 and self.x <= player2.x + SamuraiSize/2 and self.x >= player2.x - SamuraiSize/2):
+        if (self.y + SamuraiSize/2 >= player2.y - SamuraiSize/2 and self.vy > 0 and self.x <= player2.x + SamuraiSize and self.x >= player2.x - SamuraiSize):
             self.vy = 0
             self.JumpCondition = 0
 
-        if (self.y - SamuraiSize/2 <= player2.y + SamuraiSize/2 and self.vy < 0 and self.x <= player2.x + SamuraiSize/2 and self.x >= player2.x - SamuraiSize/2):
+        if (self.y - SamuraiSize/2 <= player2.y + SamuraiSize/2 and self.vy < 0 and self.x <= player2.x + SamuraiSize and self.x >= player2.x - SamuraiSize):
             self.vy = -self.vy
 
     def SceneCollision(self):
         if self.x + SamuraiSize/2 >= window_x - 30 and self.vx > 0:
-            self.vx = -self.vx
-            self.figure = self.figure.transpose(Image.FLIP_LEFT_RIGHT)
-            self.pilFigure = ImageTk.PhotoImage(self.figure)
-            self.id = canvas.create_image(self.x, self.y, image=self.pilFigure)
+            self.TurnAround()
 
         if self.x - SamuraiSize/2 <= 30 and self.vx < 0:
-            self.vx = -self.vx
-            self.figure = self.figure.transpose(Image.FLIP_LEFT_RIGHT)
-            self.pilFigure = ImageTk.PhotoImage(self.figure)
-            self.id = canvas.create_image(self.x, self.y, image=self.pilFigure)
+            self.TurnAround()
 
         if self.y + SamuraiSize/2 >= window_y - 250 and self.vy > 0:
             self.vy = 0
             self.y = window_y - 250 - SamuraiSize/2
-            self.BorderCondition = 1
             self.JumpCondition = 0
 
         if self.y - SamuraiSize/2 <= 0 and self.vy < 0:
             self.vy = -self.vy
 
-        if self.vy != 0:
-            self.BorderCondition = 0
 
     def ObstCollision(self):
         global platforms
         for i in range(4):
             #if (self.y + SamuraiSize / 2 >=  platforms[i].y - P_height/ 2 and self.vy > 0 and self.x <= platforms[i].x + P_length / 2 and self.x >= platforms[i].x - P_length / 2) and self.y + SamuraiSize / 2 <=  platforms[i].y + P_height/ 2:
-            if (self.y + SamuraiSize / 2 <=  platforms[i].y - P_height/ 2 and self.y + self.vy + SamuraiSize/2 > platforms[i].y - P_height/2 and self.x <= platforms[i].x + P_length / 2 and self.x >= platforms[i].x - P_length / 2):
+            if (self.y + SamuraiSize / 2 <=  platforms[i].y - P_height/ 2 and self.y + self.vy + SamuraiSize/2 > platforms[i].y - P_height/2 and self.x <= platforms[i].x + P_length / 2 + SamuraiSize/2 - 10 and self.x >= platforms[i].x - P_length / 2 - SamuraiSize/2 + 10):
                 self.vy = 0
                 self.JumpCondition = 0
                 self.y = platforms[i].y - P_height/2 - SamuraiSize/2
+
+    def HitCondition(self, obj):
+        if (self.x - obj.x)**2 + (self.y - obj.y)**2 <= (SamuraiSize/2 + 30)**2:
+            obj.fruitId = None
+            self.score += 1
+            obj.status = 0
 
     def Move(self, obj):
 
@@ -144,12 +206,12 @@ class Samurai:
         self.ObstCollision()
         self.x += self.vx
         self.y += self.vy
-        self.vy += 0.3
+        self.vy += g
         self.set_coords()
 
 
     def Jump(self, event):
-        if self.BorderCondition == 1 or self.JumpCondition != 1:
+        if self.JumpCondition != 1:
             self.vy = -10
             self.JumpCondition += 0.5
 def samurays():
@@ -166,16 +228,23 @@ for i in range(4):
     platforms[i].Generate()
     platforms[i].id
 
-Player1 = Samurai(200, 200, 2, Image.open("samurai_pics/samurai_1.png"))
-Player2 = Samurai(400, 200, -2, Image.open("samurai_pics/samurai_2.png"))
+Fruit = Objects(Rope)
+Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"))
+Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"))
+
 root.bind('<p>', Player2.Jump)
 root.bind('<q>', Player1.Jump)
 
 
 def Game():
-    Player1.Move(Player2)
+    Fruit.Act()
     Player2.Move(Player1)
-    root.after(10, Game)
+
+    Player1.HitCondition(Fruit)
+    Player1.Move(Player2)
+    Player2.HitCondition(Fruit)
+
+    root.after(fps, Game)
 
 Game()
 mainloop()
