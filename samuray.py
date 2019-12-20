@@ -23,8 +23,8 @@ Background = Image.open("samurai_pics/background.jpg")
 Cloud = Image.open("samurai_pics/Cloud.png")
 Platform = Image.open("samurai_pics/platform.png")
 Rope = Image.open("samurai_pics/Rope.png")
-objects = [Image.open("samurai_pics/fruit1.png"), Image.open("samurai_pics/fruit2.png"), Image.open("samurai_pics/fruit3.png")]
-t = 0
+objects = [Image.open("samurai_pics/fruit1.png"), Image.open("samurai_pics/fruit2.png"), Image.open("samurai_pics/fruit3.png"), Image.open("samurai_pics/bomb.png"), Image.open("samurai_pics/redbomb.png")]
+
 
 class Obsticles:
     def __init__(self, x = 0, y = 0, ObstPic = None):
@@ -38,18 +38,19 @@ class Obsticles:
         self.id = canvas.create_image(self.x, self.y, image=self.pic)
 
 class Objects:
-    def __init__(self, Rope):
+    def __init__(self, Rope, FruitNum):
         self.len = R_length
         self.x = randint(100,900)
         self.y = -(R_length/2 +10)
         self.tlive = 500
-        self.tmove = 0
-        self.vy = self.len/(2*100)
+        self.type = FruitNum
+        self.t = 0
+        self.vy = 0
         self.rope = Rope.resize((10, R_length))
         self.pilrope = 0
         self.status = 1
         self.ropeId = 0
-        self.fruit = objects[randint(0, 2)].resize((60,60))
+        self.fruit = objects[FruitNum].resize((60,60))
         self.pilfruit = 0
         self.fruitId = 0
     def CreateItem(self):
@@ -64,10 +65,20 @@ class Objects:
         if not self.ropeId == None:
             canvas.coords(self.ropeId, self.x, self.y - R_length/2)
 
+    def Bomb(self):
+        if self.type == 3:
+            if math.fmod(self.tlive, 100) < 50:
+                self.pilfruit = ImageTk.PhotoImage(objects[4].resize((60, 60)))
+                self.fruitId = canvas.create_image(self.x, self.y, image=self.pilfruit)
+            if math.fmod(self.tlive, 100) >= 50:
+                self.pilfruit = ImageTk.PhotoImage(objects[3].resize((60, 60)))
+                self.fruitId = canvas.create_image(self.x, self.y, image=self.pilfruit)
+            if self.tlive == 0:
+                canvas.delete (self.fruitId)
 
     def Act(self):
-        global t
         self.CreateItem()
+        self.Bomb()
         if self.y < R_length and self.status == 1:
             self.vy += 0.01
             self.y += self.vy
@@ -76,20 +87,27 @@ class Objects:
         if self.status != 0 and self.tlive != 0:
             self.tlive -= 1
         if self.status != 0 and self.tlive == 0:
-            self.vy = -t * g
+            self.vy = -self.t * g
             self.y += self.vy
             self.set_coords()
-            t += 1
+            self.t += 1
         if self.status == 0:
+
             canvas.delete(self.fruitId)
             self.fruitId = None
-            self.vy = -t * 0.03
+            self.vy = -self.t * 0.03
             self.y += self.vy
             self.set_coords()
-            t += 1
+            self.t += 1
         if self.vy < 0 and self.y < -30:
-            t = 0
-            self.__del__()
+            self.t = 0
+            canvas.delete(self.ropeId)
+            canvas.delete(self.fruitId)
+            self.ropeId = None
+            self.fruitId = None
+
+        '''if self.ropeId == None:
+            self.__del__()'''
 
     def __del__(self):
         canvas.delete(self.ropeId)
@@ -195,8 +213,11 @@ class Samurai:
 
     def HitCondition(self, obj):
         if (self.x - obj.x)**2 + (self.y - obj.y)**2 <= (SamuraiSize/2 + 30)**2:
-            obj.fruitId = None
-            self.score += 1
+
+            if obj.type != 3:
+                self.score += 1
+            if obj.type == 3 and self.score != 0:
+                self.score -= 1
             obj.status = 0
 
     def Move(self, obj):
@@ -228,7 +249,7 @@ for i in range(4):
     platforms[i].Generate()
     platforms[i].id
 
-Fruit = Objects(Rope)
+Fruit = [None]*3
 Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"))
 Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"))
 
@@ -237,12 +258,21 @@ root.bind('<q>', Player1.Jump)
 
 
 def Game():
-    Fruit.Act()
     Player2.Move(Player1)
-
-    Player1.HitCondition(Fruit)
     Player1.Move(Player2)
-    Player2.HitCondition(Fruit)
+    for i in range(3):
+        if Fruit[i] != None:
+            if Fruit[i].ropeId == None:
+                Fruit[i] = None
+
+        n = randint(0, 100)
+        if Fruit[i] == None and n == 1:
+            Fruit[i] = Objects(Rope, randint(0, 3))
+        if Fruit[i] != None:
+            Fruit[i].Act()
+            Player1.HitCondition(Fruit[i])
+
+            Player2.HitCondition(Fruit[i])
 
     root.after(fps, Game)
 
