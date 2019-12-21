@@ -24,7 +24,7 @@ Cloud = Image.open("samurai_pics/Cloud.png")
 Platform = Image.open("samurai_pics/platform.png")
 Rope = Image.open("samurai_pics/Rope.png")
 objects = [Image.open("samurai_pics/fruit1.png"), Image.open("samurai_pics/fruit2.png"), Image.open("samurai_pics/fruit3.png"), Image.open("samurai_pics/bomb.png"), Image.open("samurai_pics/redbomb.png")]
-
+score = [Image.open("score/5.jpg"), Image.open("score/4.jpg"), Image.open("score/3.jpg"), Image.open("score/2.jpg"), Image.open("score/1.jpg"), Image.open("score/0.jpg")]
 
 class Obsticles:
     def __init__(self, x = 0, y = 0, ObstPic = None):
@@ -150,17 +150,23 @@ class Scene:
 
 
 class Samurai:
-    def __init__(self, x = 0, y = 0, Vx = 0, SamuraiPic = None):
+    def __init__(self, x = 0, y = 0, Vx = 0, SamuraiPic = None, scoreX = 0):
         self.x = x
         self.y = y
         self.vx = Vx
         self.vy = 0
+        self.trecovery = 200
         self.figure = SamuraiPic.resize((SamuraiSize, SamuraiSize))
         self.pilFigure = ImageTk.PhotoImage(self.figure)
         self.id = canvas.create_image(self.x, self.y, image=self.pilFigure)
         self.JumpCondition = 0
         self.PlatformCondition = [0] * 4
         self.score = 0
+        self.scoreX = scoreX
+        self.scorePic = score[0].resize((125, 125))
+        self.scorePic = ImageTk.PhotoImage(self.scorePic)
+        self.scoreId = canvas.create_image(self.scoreX, window_y - 125, image=self.scorePic)
+
     def set_coords(self):
         canvas.coords(self.id, self.x, self.y)
 
@@ -212,13 +218,35 @@ class Samurai:
                 self.y = platforms[i].y - P_height/2 - SamuraiSize/2
 
     def HitCondition(self, obj):
-        if (self.x - obj.x)**2 + (self.y - obj.y)**2 <= (SamuraiSize/2 + 30)**2:
+        if (self.x - obj.x)**2 + (self.y - obj.y)**2 <= (SamuraiSize/2 + 30)**2 and self.trecovery == 200 and obj.fruitId != None:
 
             if obj.type != 3:
                 self.score += 1
-            if obj.type == 3 and self.score != 0:
-                self.score -= 1
+            if obj.type == 3:
+                if self.score != 0:
+                    self.score -= 1
+                self.trecovery -= 1
+                self.x = 500
+                self.y = window_y - 250
             obj.status = 0
+            if self.score <= 5:
+                canvas.delete(self.scoreId)
+                self.scorePic = score[self.score].resize((125, 125))
+                self.scorePic = ImageTk.PhotoImage(self.scorePic)
+                self.scoreId = canvas.create_image(self.scoreX, window_y - 125, image=self.scorePic)
+
+        if self.trecovery != 200:
+            if math.fmod(self.trecovery, 20) >= 10:
+                canvas.delete(self.id)
+                self.pilFigure = None
+            else:
+                self.pilFigure = ImageTk.PhotoImage(self.figure)
+                self.id = canvas.create_image(self.x, self.y, image=self.pilFigure)
+
+            self.trecovery -= 1
+        if self.trecovery == 0:
+            self.trecovery = 200
+
 
     def Move(self, obj):
 
@@ -235,6 +263,7 @@ class Samurai:
         if self.JumpCondition != 1:
             self.vy = -10
             self.JumpCondition += 0.5
+
 def samurays():
 
     canvas.create_rectangle(925, 205, 773, 235, fill='yellow', outline='orange')
@@ -250,8 +279,8 @@ for i in range(4):
     platforms[i].id
 
 Fruit = [None]*3
-Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"))
-Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"))
+Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"), 200)
+Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"), 800)
 
 root.bind('<p>', Player2.Jump)
 root.bind('<q>', Player1.Jump)
