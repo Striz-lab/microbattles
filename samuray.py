@@ -8,6 +8,7 @@ root = Tk()
 root.geometry('1000x750')
 canvas = Canvas(root, width=1000, height=750)
 canvas.pack()
+game = 1
 
 window_x = 1000
 window_y = 750
@@ -123,6 +124,7 @@ for j in range(4):
 
 class Scene:
     def __init__(self):
+        global Cloud, Background
         self.cloud = Cloud.resize((int(window_x/4), int(0.05*window_y)))
         self.background = Background.resize((window_x, window_y))
         self.cloudId = 0
@@ -130,22 +132,24 @@ class Scene:
         self.platform = Platform.resize((int(window_x/4), int(0.04*window_y)))
         self.platformCoords = [0]*4
         self.platformId = [0]*4
+        self.cloudPil = 0
+        self.backgroundPil = 0
+        self.backgroundId = 0
 
 
     def DrawCloud(self):
         global Cloud
-        Cloud = ImageTk.PhotoImage(self.cloud)
-        self.cloudId = canvas.create_image(int(window_x/2), int(150*window_y/750), image=Cloud)
-        self.x = 500
-        self.y = 150
+        self.cloudPil = ImageTk.PhotoImage(self.cloud)
+        self.cloudId = canvas.create_image(int(window_x/2), int(150*window_y/750), image=self.cloudPil)
+
 
     def MoveCloud(self):
         canvas.move(self.cloudId, self.cloudV, 0)
 
     def DrawBackground(self):
         global Background
-        Background = ImageTk.PhotoImage(self.background)
-        canvas.create_image(int(window_x/2), int(window_y/2), image=Background)
+        self.backgroundPil = ImageTk.PhotoImage(self.background)
+        self.backgroundId = canvas.create_image(int(window_x/2), int(window_y/2), image=self.backgroundPil)
 
 
 
@@ -186,8 +190,7 @@ class Samurai:
             player2.TurnAround()
 
         if (self.y + SamuraiSize/2 >= player2.y - SamuraiSize/2 and self.vy > 0 and self.x <= player2.x + SamuraiSize and self.x >= player2.x - SamuraiSize):
-            self.vy = 0
-            self.JumpCondition = 0
+            self.vy = - self.vy
 
         if (self.y - SamuraiSize/2 <= player2.y + SamuraiSize/2 and self.vy < 0 and self.x <= player2.x + SamuraiSize and self.x >= player2.x - SamuraiSize):
             self.vy = -self.vy
@@ -268,27 +271,36 @@ def samurays():
 
     canvas.create_rectangle(925, 205, 773, 235, fill='yellow', outline='orange')
 
-Main = Scene()
-
-
-Main.DrawBackground()
-Main.DrawCloud()
-
-for i in range(4):
-    platforms[i].Generate()
-    platforms[i].id
-
-Fruit = [None]*3
-Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"), 200)
-Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"), 800)
-
-root.bind('<p>', Player2.Jump)
-root.bind('<q>', Player1.Jump)
-
+Main = None
+Fruit = None
+Player1 = None
+Player2 = None
 
 def Game():
+    global Main, Fruit, Player1, Player2
+    Main = Scene()
+
+    Main.DrawCloud()
+    Main.DrawBackground()
+
+
+    for i in range(4):
+        platforms[i].Generate()
+        platforms[i].id
+
+    Fruit = [None]*3
+    Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"), 200)
+    Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"), 800)
+
+    Animated(Player1, Player2, Fruit)
+
+
+
+def Animated(Player1, Player2, Fruit):
     Player2.Move(Player1)
     Player1.Move(Player2)
+    root.bind('<p>', Player2.Jump)
+    root.bind('<q>', Player1.Jump)
     for i in range(3):
         if Fruit[i] != None:
             if Fruit[i].ropeId == None:
@@ -303,7 +315,8 @@ def Game():
 
             Player2.HitCondition(Fruit[i])
 
-    root.after(fps, Game)
+    root.after(fps,lambda: Animated(Player1, Player2, Fruit))
 
 Game()
+
 mainloop()
