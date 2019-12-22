@@ -4,10 +4,10 @@ from random import randint
 from time import sleep
 import math
 
-root = Tk()
-root.geometry('1000x750')
-canvas = Canvas(root, width=1000, height=750)
-canvas.pack()
+#root = Tk()
+#root.geometry('1000x750')
+#canvas = Canvas(root, width=1000, height=750)
+#canvas.pack()
 game = 1
 
 window_x = 1000
@@ -26,6 +26,10 @@ Platform = Image.open("samurai_pics/platform.png")
 Rope = Image.open("samurai_pics/Rope.png")
 objects = [Image.open("samurai_pics/fruit1.png"), Image.open("samurai_pics/fruit2.png"), Image.open("samurai_pics/fruit3.png"), Image.open("samurai_pics/bomb.png"), Image.open("samurai_pics/redbomb.png")]
 score = [Image.open("score/5.jpg"), Image.open("score/4.jpg"), Image.open("score/3.jpg"), Image.open("score/2.jpg"), Image.open("score/1.jpg"), Image.open("score/0.jpg")]
+redWins = Image.open("samurai_pics/red_wins.jpg")
+blueWins = Image.open("samurai_pics/blue_wins.jpg")
+
+
 
 class Obsticles:
     def __init__(self, x = 0, y = 0, ObstPic = None):
@@ -114,13 +118,6 @@ class Objects:
         canvas.delete(self.ropeId)
         canvas.delete(self.fruitId)
 
-platforms = [0] * 4
-shift_x1 = randint(int(window_x / 6), int(1 * window_x / 3))
-shift_x2 = randint(int(window_x / 5), int(1 * window_x / 3))
-shift_y = 125
-sign = [0,1,0,1]
-for j in range(4):
-    platforms[j] = Obsticles(int(window_x / 2) + math.sin(j*(math.pi/2))*shift_x1 + math.cos(j*(math.pi/2))*shift_x2, int(window_y/3) + sign[j]*shift_y, Platform)
 
 class Scene:
     def __init__(self):
@@ -143,9 +140,6 @@ class Scene:
         self.cloudId = canvas.create_image(int(window_x/2), int(150*window_y/750), image=self.cloudPil)
 
 
-    def MoveCloud(self):
-        canvas.move(self.cloudId, self.cloudV, 0)
-
     def DrawBackground(self):
         global Background
         self.backgroundPil = ImageTk.PhotoImage(self.background)
@@ -154,7 +148,7 @@ class Scene:
 
 
 class Samurai:
-    def __init__(self, x = 0, y = 0, Vx = 0, SamuraiPic = None, scoreX = 0):
+    def __init__(self, x = 0, y = 0, Vx = 0, SamuraiPic = None, scoreX = 0, WinPic = 0):
         self.x = x
         self.y = y
         self.vx = Vx
@@ -170,6 +164,9 @@ class Samurai:
         self.scorePic = score[0].resize((125, 125))
         self.scorePic = ImageTk.PhotoImage(self.scorePic)
         self.scoreId = canvas.create_image(self.scoreX, window_y - 125, image=self.scorePic)
+        self.winpic = WinPic
+        self.winpicPil = ImageTk.PhotoImage(self.winpic)
+        self.winpicId = 0
 
     def set_coords(self):
         canvas.coords(self.id, self.x, self.y)
@@ -220,7 +217,8 @@ class Samurai:
                 self.JumpCondition = 0
                 self.y = platforms[i].y - P_height/2 - SamuraiSize/2
 
-    def HitCondition(self, obj):
+    def ScoreCondition(self, obj, player2):
+        global game
         if (self.x - obj.x)**2 + (self.y - obj.y)**2 <= (SamuraiSize/2 + 30)**2 and self.trecovery == 200 and obj.fruitId != None:
 
             if obj.type != 3:
@@ -229,7 +227,7 @@ class Samurai:
                 if self.score != 0:
                     self.score -= 1
                 self.trecovery -= 1
-                self.x = 500
+                self.x = 1000 - player2.x
                 self.y = window_y - 250
             obj.status = 0
             if self.score <= 5:
@@ -249,6 +247,10 @@ class Samurai:
             self.trecovery -= 1
         if self.trecovery == 0:
             self.trecovery = 200
+
+        if self.score == 5:
+            game = 0
+            self.winpicId = canvas.create_image(window_x/2, window_y/3, image=self.winpicPil)
 
 
     def Move(self, obj):
@@ -271,17 +273,14 @@ def samurays():
 
     canvas.create_rectangle(925, 205, 773, 235, fill='yellow', outline='orange')
 
-Main = None
-Fruit = None
-Player1 = None
-Player2 = None
 
 def Game():
     global Main, Fruit, Player1, Player2
     Main = Scene()
 
-    Main.DrawCloud()
+
     Main.DrawBackground()
+    Main.DrawCloud()
 
 
     for i in range(4):
@@ -289,34 +288,60 @@ def Game():
         platforms[i].id
 
     Fruit = [None]*3
-    Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"), 200)
-    Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"), 800)
+    Player1 = Samurai(200, 200, PlayerV, Image.open("samurai_pics/samurai_1.png"), 200, blueWins)
+    Player2 = Samurai(400, 200, -PlayerV, Image.open("samurai_pics/samurai_2.png"), 800, redWins)
 
     Animated(Player1, Player2, Fruit)
 
 
 
 def Animated(Player1, Player2, Fruit):
+    global game
     Player2.Move(Player1)
     Player1.Move(Player2)
+
     root.bind('<p>', Player2.Jump)
     root.bind('<q>', Player1.Jump)
+
+
     for i in range(3):
         if Fruit[i] != None:
             if Fruit[i].ropeId == None:
                 Fruit[i] = None
 
         n = randint(0, 100)
-        if Fruit[i] == None and n == 1:
+        if Fruit[i] == None and n == 1 and game == 1:
             Fruit[i] = Objects(Rope, randint(0, 3))
         if Fruit[i] != None:
             Fruit[i].Act()
-            Player1.HitCondition(Fruit[i])
+            if game == 1:
+                Player1.ScoreCondition(Fruit[i], Player2)
 
-            Player2.HitCondition(Fruit[i])
+                Player2.ScoreCondition(Fruit[i], Player1)
+            else:
+                Fruit[i].tlive = 0
 
     root.after(fps,lambda: Animated(Player1, Player2, Fruit))
 
-Game()
 
-mainloop()
+def main():
+
+
+    global platforms
+    platforms = [0] * 4
+    shift_x1 = randint(int(window_x / 6), int(1 * window_x / 3))
+    shift_x2 = randint(int(window_x / 5), int(1 * window_x / 3))
+    shift_y = 125
+    sign = [0,1,0,1]
+    for j in range(4):
+        platforms[j] = Obsticles(int(window_x / 2) + math.sin(j*(math.pi/2))*shift_x1 + math.cos(j*(math.pi/2))*shift_x2, int(window_y/3) + sign[j]*shift_y, Platform)
+
+
+    Main = None
+    Fruit = None
+    Player1 = None
+    Player2 = None
+
+    Game()
+
+    mainloop()
